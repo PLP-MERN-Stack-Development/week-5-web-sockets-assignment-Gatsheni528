@@ -45,11 +45,11 @@ A full-stack real-time chat application with global chat, private messaging, fil
 
 | Global Chat | Private Chat |
 |-------------|--------------|
-| ![chat](screenshots/chat-global.png) | ![private](screenshots/chat-private.png) |
+| ![chat](global.png) | ![private](OneUser.png) |
 
 | File Upload | Typing Indicator |
 |-------------|------------------|
-| ![upload](screenshots/image-upload.png) | ![typing](screenshots/typing.png) |
+| ![upload](Private.png)
 
 *(Replace with your own screenshots or GIFs)*
 
