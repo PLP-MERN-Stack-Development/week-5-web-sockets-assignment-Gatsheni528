@@ -1,149 +1,81 @@
-// socket.js - Socket.io client setup
-
-import { io } from 'socket.io-client';
 import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 
-// Socket.io connection URL
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const socket = io('https://chat-backend-vacz.onrender.com');
 
-// Create socket instance
-export const socket = io(SOCKET_URL, {
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-});
-
-// Custom hook for using socket.io
-export const useSocket = () => {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [lastMessage, setLastMessage] = useState(null);
+function App() {
+  const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [username, setUsername] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
-  // Connect to socket server
-  const connect = (username) => {
-    socket.connect();
-    if (username) {
-      socket.emit('user_join', username);
-    }
-  };
-
-  // Disconnect from socket server
-  const disconnect = () => {
-    socket.disconnect();
-  };
-
-  // Send a message
-  const sendMessage = (message) => {
-    socket.emit('send_message', { message });
-  };
-
-  // Send a private message
-  const sendPrivateMessage = (to, message) => {
-    socket.emit('private_message', { to, message });
-  };
-
-  // Set typing status
-  const setTyping = (isTyping) => {
-    socket.emit('typing', isTyping);
-  };
-
-  // Socket event listeners
   useEffect(() => {
-    // Connection events
-    const onConnect = () => {
-      setIsConnected(true);
-    };
+    const name = prompt('Enter your username:');
+    setUsername(name);
+    socket.emit('setUsername', name);
 
-    const onDisconnect = () => {
-      setIsConnected(false);
-    };
+    socket.on('receiveMessage', (data) => {
+      setMessages((prev) => [...prev, data]);
+    });
 
-    // Message events
-    const onReceiveMessage = (message) => {
-      setLastMessage(message);
-      setMessages((prev) => [...prev, message]);
-    };
+    socket.on('userTyping', (name) => {
+      setIsTyping(name);
+      setTimeout(() => setIsTyping(false), 1000);
+    });
 
-    const onPrivateMessage = (message) => {
-      setLastMessage(message);
-      setMessages((prev) => [...prev, message]);
-    };
+    socket.on('updateUsers', (users) => {
+      setOnlineUsers(users);
+    });
 
-    // User events
-    const onUserList = (userList) => {
-      setUsers(userList);
-    };
-
-    const onUserJoined = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} joined the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    };
-
-    const onUserLeft = (user) => {
-      // You could add a system message here
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          system: true,
-          message: `${user.username} left the chat`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    };
-
-    // Typing events
-    const onTypingUsers = (users) => {
-      setTypingUsers(users);
-    };
-
-    // Register event listeners
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('receive_message', onReceiveMessage);
-    socket.on('private_message', onPrivateMessage);
-    socket.on('user_list', onUserList);
-    socket.on('user_joined', onUserJoined);
-    socket.on('user_left', onUserLeft);
-    socket.on('typing_users', onTypingUsers);
-
-    // Clean up event listeners
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('receive_message', onReceiveMessage);
-      socket.off('private_message', onPrivateMessage);
-      socket.off('user_list', onUserList);
-      socket.off('user_joined', onUserJoined);
-      socket.off('user_left', onUserLeft);
-      socket.off('typing_users', onTypingUsers);
+      socket.disconnect();
     };
   }, []);
 
-  return {
-    socket,
-    isConnected,
-    lastMessage,
-    messages,
-    users,
-    typingUsers,
-    connect,
-    disconnect,
-    sendMessage,
-    sendPrivateMessage,
-    setTyping,
+  const handleSend = () => {
+    if (message.trim()) {
+      const newMessage = {
+        sender: username,
+        text: message,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      socket.emit('sendMessage', newMessage);
+      setMessages((prev) => [...prev, newMessage]);
+      setMessage('');
+    }
   };
-};
 
-export default socket; 
+  const handleTyping = () => {
+    socket.emit('typing', username);
+  };
+
+  return (
+    <div className="chat-app">
+      <h1>🚀 Real-Time Chat App</h1>
+      <div className="users-online">
+        <strong>Online:</strong> {onlineUsers.join(', ')}
+      </div>
+
+      <div className="messages">
+        {messages.map((msg, index) => (
+          <div key={index}>
+            <strong>{msg.sender}:</strong> {msg.text} <small>{msg.timestamp}</small>
+          </div>
+        ))}
+        {isTyping && <p><em>{isTyping} is typing...</em></p>}
+      </div>
+
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleTyping}
+        placeholder="Type a message..."
+      />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}
+
+export default App;
