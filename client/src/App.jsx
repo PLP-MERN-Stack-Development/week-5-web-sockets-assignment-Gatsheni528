@@ -6,6 +6,12 @@ import './App.css';
 // ✅ LIVE backend (not localhost)
 const socket = io('https://chat-backend-vacz.onrender.com');
 
+console.log('Socket connecting to backend...');
+socket.on('connect', () => {
+  console.log('✅ Connected to backend:', socket.id);
+});
+
+
 function App() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
