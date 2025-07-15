@@ -3,7 +3,8 @@ import { io } from 'socket.io-client';
 import { useEffect, useState } from 'react';
 import './App.css';
 
-const socket = io('http://localhost:5000');
+// ✅ LIVE backend (not localhost)
+const socket = io('https://chat-backend-vacz.onrender.com');
 
 function App() {
   const [username, setUsername] = useState('');
