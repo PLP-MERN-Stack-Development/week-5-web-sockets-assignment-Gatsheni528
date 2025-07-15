@@ -8,7 +8,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*', // Change to your Vercel frontend URL after deploying
+    origin: 'https://chat-frontend-lco8d0sfb-mphos-projects-ca5d8835.vercel.app',
     methods: ['GET', 'POST']
   }
 });
